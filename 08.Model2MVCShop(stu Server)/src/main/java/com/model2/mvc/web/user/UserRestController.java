@@ -38,6 +38,12 @@ public class UserRestController {
 		System.out.println(this.getClass());
 	}
 	
+	@Value("#{commonProperties['pageUnit']}")
+	int pageUnit;
+	
+	@Value("#{commonProperties['pageSize']}")
+	int pageSize;
+	
 	@RequestMapping( value="json/getUser/{userId}", method=RequestMethod.GET )
 	public User getUser( @PathVariable String userId ) throws Exception{
 		
@@ -73,4 +79,39 @@ public class UserRestController {
 		userService.addUser(user);
 		return user;
 		}
+	
+	@RequestMapping( value="json/logout", method=RequestMethod.GET )
+	public String logout(HttpSession session ) throws Exception{
+		
+		System.out.println("/user/logout : GET");
+		
+		session.invalidate();
+		
+		return "redirect:/index.jsp";
+	}
+	
+	@RequestMapping( value="json/listUser")
+	public Map<String, Object> listUser( @RequestBody Search search , Model model
+										) throws Exception{
+		
+		System.out.println("/user/listUser : GET / POST");
+		
+		if(search.getCurrentPage() ==0 ){
+			search.setCurrentPage(1);
+		}
+		search.setPageSize(pageSize);
+		
+		// Business logic 수행
+		Map<String , Object> map=userService.getUserList(search);
+		
+		Page resultPage = new Page( search.getCurrentPage(), ((Integer)map.get("totalCount")).intValue(), pageUnit, pageSize);
+		System.out.println(resultPage);
+		
+		// Model 과 View 연결
+		map.put("resultPage", resultPage);
+		map.put("search", search);
+		
+		return map;
+	}
+	
 	}
